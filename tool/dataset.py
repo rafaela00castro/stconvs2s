@@ -1,6 +1,3 @@
-import xarray as xr
-import numpy as np
-
 import torch
 from torch.utils.data import Dataset
 
@@ -13,6 +10,7 @@ class NetCDFDataset(Dataset):
         # orignal data format batch x time x latitude x longitude x channel
         sr = Splitter(test_split, validation_split)
         if (is_test):
+            self.should_flip = DataFlipChecker.check_flip(dataset)
             data = sr.split_test(dataset)
         elif (is_validation):
             data = sr.split_validation(dataset)
@@ -66,3 +64,33 @@ class Splitter():
                 return dataset[dict(sample=slice(0,split))]
             else:
                 return dataset[dict(sample=slice(split, None))]
+            
+
+class DataFlipChecker():
+    """
+    Checks if geographic data needs to be flipped for proper visualization.
+    
+    When using matplotlib's imshow(), the origin is at the top-left by default (origin='upper').
+    For geographic data with lat/lon coordinates, this can cause the map to appear upside down.
+    """
+    
+    @staticmethod
+    def check_flip(dataset):
+        # Check if the object has coordinates attribute (xarray.Dataset)
+        if not hasattr(dataset, 'coords'):
+            return False
+        
+        lat_coord, lon_coord = None, None
+        
+        for coord_name in dataset.coords:
+            coord_lower = coord_name.lower()
+            
+            if 'lat' in coord_lower:
+                lat_coord = coord_name
+            elif 'lon' in coord_lower:
+                lon_coord = coord_name
+        
+        if lat_coord is not None and lon_coord is not None:
+            return True
+        
+        return False

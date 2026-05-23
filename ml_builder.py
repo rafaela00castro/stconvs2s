@@ -103,7 +103,10 @@ class MLBuilder:
                       'alpha': 0.9, 
                       'eps': 1e-6}
         optimizer = torch.optim.RMSprop(model.parameters(), **opt_params)
-        util = Util(self.config.model, self.dataset_type, self.config.version, self.filename_prefix)
+
+        should_flip_dataset = getattr(test_dataset, 'should_flip', False)
+        util = Util(self.config.model, self.dataset_type, self.config.version, 
+                    self.filename_prefix, should_flip=should_flip_dataset)
         
         train_info = {'train_time': 0}
         if self.config.pre_trained is None:
